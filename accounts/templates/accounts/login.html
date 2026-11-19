@@ -1,34 +1,505 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <title>Login</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login | Taxi Service</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --taxi-yellow: #FFB800;
+            --taxi-yellow-glow: rgba(255, 184, 0, 0.28);
+            --taxi-yellow-hover: #ffc425;
+            --taxi-amber-dark: #cc9300;
+            --bg-asphalt: #090B0E;
+            --bg-surface: #12161F;
+            --bg-card: rgba(18, 22, 32, 0.82);
+            --border-subtle: rgba(255, 184, 0, 0.14);
+            --border-highlight: rgba(255, 184, 0, 0.38);
+            --text-primary: #F8FAFC;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+            --danger-color: #EF4444;
+            --danger-bg: rgba(239, 68, 68, 0.12);
+            --danger-border: rgba(239, 68, 68, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-asphalt);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 16px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Ambient Streetlight & Taxi Glow Atmosphere */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -120px;
+            right: -100px;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(255, 184, 0, 0.16) 0%, rgba(255, 184, 0, 0.03) 45%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+            filter: blur(40px);
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: -150px;
+            left: -120px;
+            width: 550px;
+            height: 550px;
+            background: radial-gradient(circle, rgba(30, 58, 138, 0.22) 0%, rgba(15, 23, 42, 0.05) 50%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+            filter: blur(50px);
+        }
+
+        .ambient-grid {
+            position: fixed;
+            inset: 0;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 48px 48px;
+            z-index: 0;
+            pointer-events: none;
+            mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+            -webkit-mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+        }
+
+        .auth-container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 460px;
+        }
+
+        .auth-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--border-subtle);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 
+                0 25px 60px -15px rgba(0, 0, 0, 0.8),
+                0 0 35px var(--taxi-yellow-glow);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .auth-card:hover {
+            border-color: var(--border-highlight);
+            box-shadow: 
+                0 30px 70px -12px rgba(0, 0, 0, 0.85),
+                0 0 45px rgba(255, 184, 0, 0.28);
+        }
+
+        /* Signature Taxi Checkerboard Ribbon */
+        .taxi-checker-ribbon {
+            height: 10px;
+            width: 100%;
+            background: repeating-conic-gradient(var(--taxi-yellow) 0% 25%, #11141B 0% 50%) 50% / 20px 10px;
+            border-bottom: 1px solid rgba(255, 184, 0, 0.3);
+        }
+
+        .card-header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 24px 28px 12px;
+        }
+
+        .brand-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 184, 0, 0.08);
+            border: 1px solid rgba(255, 184, 0, 0.22);
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--taxi-yellow);
+        }
+
+        .brand-badge svg {
+            width: 14px;
+            height: 14px;
+            fill: var(--taxi-yellow);
+        }
+
+        .status-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 4px 10px;
+            border-radius: 999px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-chip svg {
+            width: 12px;
+            height: 12px;
+            stroke: var(--taxi-yellow);
+        }
+
+        /* Header Info */
+        .auth-header {
+            padding: 10px 28px 24px;
+            text-align: center;
+        }
+
+        .auth-icon-wrap {
+            width: 58px;
+            height: 58px;
+            margin: 0 auto 16px;
+            background: linear-gradient(135deg, rgba(255, 184, 0, 0.15) 0%, rgba(255, 184, 0, 0.02) 100%);
+            border: 1px solid rgba(255, 184, 0, 0.25);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .auth-icon-wrap svg {
+            width: 26px;
+            height: 26px;
+            fill: var(--taxi-yellow);
+        }
+
+        .auth-title {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+
+        .auth-subtitle {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Error Notification */
+        .error-banner {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--danger-bg);
+            border: 1px solid var(--danger-border);
+            color: #FCA5A5;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin: 0 28px 20px;
+            font-size: 13px;
+            font-weight: 500;
+            animation: shake 0.3s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-4px); }
+            40%, 80% { transform: translateX(4px); }
+        }
+
+        .error-banner svg {
+            width: 18px;
+            height: 18px;
+            stroke: var(--danger-color);
+            flex-shrink: 0;
+        }
+
+        /* Form Controls */
+        .auth-form {
+            padding: 0 28px 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 14px;
+            width: 18px;
+            height: 18px;
+            stroke: var(--text-muted);
+            pointer-events: none;
+            transition: stroke 0.2s ease;
+        }
+
+        .input-control {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.035);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 13px 16px 13px 44px;
+            font-family: inherit;
+            font-size: 14px;
+            color: var(--text-primary);
+            transition: all 0.25s ease;
+        }
+
+        .input-control::placeholder {
+            color: var(--text-muted);
+        }
+
+        .input-control:hover {
+            border-color: rgba(255, 255, 255, 0.16);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .input-control:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.07);
+            border-color: var(--taxi-yellow);
+            box-shadow: 0 0 0 3px rgba(255, 184, 0, 0.16), 0 0 16px rgba(255, 184, 0, 0.12);
+        }
+
+        .input-control:focus + .input-icon,
+        .input-wrapper:focus-within .input-icon {
+            stroke: var(--taxi-yellow);
+        }
+
+        /* Submit Button */
+        .btn-taxi-submit {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            background: linear-gradient(135deg, var(--taxi-yellow) 0%, #F59E0B 100%);
+            color: #090B0E;
+            font-weight: 800;
+            font-size: 15px;
+            padding: 14px 20px;
+            border-radius: 14px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 10px 25px -5px rgba(255, 184, 0, 0.45);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+
+        .btn-taxi-submit::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .btn-taxi-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 30px -4px rgba(255, 184, 0, 0.6);
+            background: linear-gradient(135deg, var(--taxi-yellow-hover) 0%, #f5a71a 100%);
+        }
+
+        .btn-taxi-submit:hover::before {
+            left: 100%;
+        }
+
+        .btn-taxi-submit:active {
+            transform: translateY(0);
+        }
+
+        .btn-taxi-submit svg {
+            width: 18px;
+            height: 18px;
+            stroke: #090B0E;
+            stroke-width: 2.5;
+            fill: none;
+        }
+
+        /* Footer Link */
+        .auth-footer {
+            padding: 16px 28px;
+            background: rgba(9, 11, 14, 0.6);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .auth-footer a {
+            color: var(--taxi-yellow);
+            font-weight: 700;
+            text-decoration: none;
+            margin-left: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .auth-footer a:hover {
+            color: var(--taxi-yellow-hover);
+            text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+            .card-header-bar,
+            .auth-header,
+            .auth-form,
+            .auth-footer,
+            .error-banner {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+        }
+    </style>
 </head>
+
 <body>
-    <h1>Login</h1>
+    <div class="ambient-grid"></div>
 
-    {% if error %}
-        <p style="color: red;">{{ error }}</p>
-    {% endif %}
+    <main class="auth-container">
+        <div class="auth-card">
+            <!-- Iconic Taxi Checkerboard Ribbon Top -->
+            <div class="taxi-checker-ribbon"></div>
 
-    <form method="POST">
-        {% csrf_token %}
+            <!-- Header Bar -->
+            <div class="card-header-bar">
+                <div class="brand-badge">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.85 7h10.29l1.04 3H5.81l1.04-3zM19 17H5v-4.66l.12-.34h13.77l.11.34V17z"/>
+                        <circle cx="7.5" cy="14.5" r="1.5"/>
+                        <circle cx="16.5" cy="14.5" r="1.5"/>
+                    </svg>
+                    Taxi Service
+                </div>
 
-        <p>
-            <label>Username</label>
-            <input type="text" name="username" required>
-        </p>
+                <div class="status-chip">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    Secure
+                </div>
+            </div>
 
-        <p>
-            <label>Password</label>
-            <input type="password" name="password" required>
-        </p>
+            <!-- Auth Header -->
+            <div class="auth-header">
+                <div class="auth-icon-wrap">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                    </svg>
+                </div>
+                <h1 class="auth-title">Welcome Back</h1>
+                <p class="auth-subtitle">Sign in to your account to order or manage rides</p>
+            </div>
 
-        <button type="submit">Login</button>
-    </form>
+            {% if error %}
+            <div class="error-banner">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <span>{{ error }}</span>
+            </div>
+            {% endif %}
 
-    <p>Don't have an account?
-        <a href="{% url 'register' %}">Register</a>
-    </p>
+            <!-- Login Form -->
+            <form method="POST" class="auth-form">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label for="id_username">Username</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="id_username" name="username" class="input-control" placeholder="Enter your username" required autofocus autocomplete="username">
+                        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="id_password">Password</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="id_password" name="password" class="input-control" placeholder="Enter your password" required autocomplete="current-password">
+                        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-taxi-submit">
+                    <span>Sign In</span>
+                    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                </button>
+            </form>
+
+            <!-- Card Footer -->
+            <div class="auth-footer">
+                Don't have an account yet?
+                <a href="{% url 'register' %}">Register now</a>
+            </div>
+        </div>
+    </main>
 </body>
+
 </html>

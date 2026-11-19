@@ -1,20 +1,499 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+
+<head>
     <meta charset="UTF-8" />
-    <title>Cancel Ride</title>
-  </head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cancel Ride #{{ ride.id }} | Taxi Service</title>
 
-  <body>
-    <h1>Cancel Ride #{{ ride.id }}</h1>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 
-    <p>Are you sure you want to cancel this ride?</p>
+    <style>
+        :root {
+            --taxi-yellow: #FFB800;
+            --taxi-yellow-glow: rgba(255, 184, 0, 0.28);
+            --taxi-yellow-hover: #ffc425;
+            --bg-asphalt: #090B0E;
+            --bg-surface: #12161F;
+            --bg-card: rgba(18, 22, 32, 0.85);
+            --border-subtle: rgba(255, 184, 0, 0.14);
+            --border-highlight: rgba(255, 184, 0, 0.38);
+            --text-primary: #F8FAFC;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+            --danger-color: #EF4444;
+            --danger-hover: #dc2626;
+            --danger-bg: rgba(239, 68, 68, 0.12);
+            --danger-border: rgba(239, 68, 68, 0.3);
+        }
 
-    <form method="POST">
-      {% csrf_token %}
-      <button type="submit">Yes, Cancel Ride</button>
-    </form>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    <a href="{% url 'ride_detail' ride.id %}">No, Go Back</a>
-  </body>
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-asphalt);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 16px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Ambient Streetlight & Taxi Glow Atmosphere */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -120px;
+            right: -100px;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(239, 68, 68, 0.15) 0%, rgba(255, 184, 0, 0.05) 45%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+            filter: blur(45px);
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: -150px;
+            left: -120px;
+            width: 550px;
+            height: 550px;
+            background: radial-gradient(circle, rgba(30, 58, 138, 0.22) 0%, rgba(15, 23, 42, 0.05) 50%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+            filter: blur(50px);
+        }
+
+        .ambient-grid {
+            position: fixed;
+            inset: 0;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 48px 48px;
+            z-index: 0;
+            pointer-events: none;
+            mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+            -webkit-mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+        }
+
+        .cancel-container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 480px;
+        }
+
+        .cancel-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 
+                0 25px 60px -15px rgba(0, 0, 0, 0.8),
+                0 0 35px rgba(239, 68, 68, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .cancel-card:hover {
+            border-color: rgba(239, 68, 68, 0.45);
+            box-shadow: 
+                0 30px 70px -12px rgba(0, 0, 0, 0.85),
+                0 0 45px rgba(239, 68, 68, 0.22);
+        }
+
+        /* Signature Taxi Checkerboard Ribbon with Red Amber Twist */
+        .taxi-checker-ribbon {
+            height: 10px;
+            width: 100%;
+            background: repeating-conic-gradient(var(--taxi-yellow) 0% 25%, #11141B 0% 50%) 50% / 20px 10px;
+            border-bottom: 1px solid rgba(255, 184, 0, 0.3);
+        }
+
+        .card-header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 24px 28px 12px;
+        }
+
+        .brand-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 184, 0, 0.08);
+            border: 1px solid rgba(255, 184, 0, 0.22);
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--taxi-yellow);
+        }
+
+        .brand-badge svg {
+            width: 14px;
+            height: 14px;
+            fill: var(--taxi-yellow);
+        }
+
+        .caution-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #F87171;
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.28);
+            padding: 4px 10px;
+            border-radius: 999px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .caution-chip svg {
+            width: 12px;
+            height: 12px;
+            stroke: currentColor;
+            fill: none;
+        }
+
+        /* Hero Alert */
+        .cancel-hero {
+            padding: 10px 28px 20px;
+            text-align: center;
+        }
+
+        .alert-icon-wrap {
+            width: 62px;
+            height: 62px;
+            margin: 0 auto 16px;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.04) 100%);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px rgba(239, 68, 68, 0.15);
+        }
+
+        .alert-icon-wrap svg {
+            width: 28px;
+            height: 28px;
+            stroke: #EF4444;
+            fill: none;
+        }
+
+        .cancel-title {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+
+        .cancel-subtitle {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Trip Details Card */
+        .trip-preview-card {
+            background: rgba(255, 255, 255, 0.025);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 16px;
+            padding: 16px;
+            margin: 0 28px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .route-preview {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-left: 18px;
+            position: relative;
+        }
+
+        .route-preview::before {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 8px;
+            bottom: 10px;
+            width: 2px;
+            background: repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.25) 0, rgba(255, 255, 255, 0.25) 4px, transparent 4px, transparent 8px);
+        }
+
+        .preview-point {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .preview-dot {
+            position: absolute;
+            left: -18px;
+            top: 4px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .dot-green {
+            background: #22C55E;
+            box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
+        }
+
+        .dot-red {
+            background: #EF4444;
+            box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);
+        }
+
+        .point-tag {
+            font-size: 10px;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+        }
+
+        .point-text {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .preview-metrics {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .preview-fare {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--taxi-yellow);
+        }
+
+        /* Action Buttons */
+        .actions-section {
+            padding: 0 28px 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .btn-cancel-submit {
+            width: 100%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%);
+            color: #FFFFFF;
+            font-weight: 800;
+            font-size: 15px;
+            padding: 14px 20px;
+            border-radius: 14px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.45);
+            transition: all 0.25s ease;
+        }
+
+        .btn-cancel-submit:hover {
+            background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 14px 30px -4px rgba(239, 68, 68, 0.6);
+        }
+
+        .btn-cancel-submit svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            fill: none;
+        }
+
+        .btn-back-safe {
+            width: 100%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-primary);
+            font-weight: 700;
+            font-size: 14px;
+            padding: 13px 20px;
+            border-radius: 14px;
+            text-decoration: none;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.25s ease;
+        }
+
+        .btn-back-safe:hover {
+            background: rgba(255, 184, 0, 0.08);
+            border-color: rgba(255, 184, 0, 0.35);
+            color: var(--taxi-yellow);
+            transform: translateY(-1px);
+        }
+
+        /* Footer */
+        .cancel-footer {
+            padding: 14px 28px;
+            background: rgba(9, 11, 14, 0.6);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .cancel-footer span {
+            color: #F87171;
+            font-family: 'Space Grotesk', monospace;
+            font-weight: 700;
+        }
+
+        @media (max-width: 480px) {
+            .card-header-bar,
+            .cancel-hero,
+            .trip-preview-card,
+            .actions-section,
+            .cancel-footer {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="ambient-grid"></div>
+
+    <main class="cancel-container">
+        <div class="cancel-card">
+            <!-- Iconic Taxi Checkerboard Ribbon Top -->
+            <div class="taxi-checker-ribbon"></div>
+
+            <!-- Header Bar -->
+            <div class="card-header-bar">
+                <div class="brand-badge">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.85 7h10.29l1.04 3H5.81l1.04-3zM19 17H5v-4.66l.12-.34h13.77l.11.34V17z"/>
+                        <circle cx="7.5" cy="14.5" r="1.5"/>
+                        <circle cx="16.5" cy="14.5" r="1.5"/>
+                    </svg>
+                    Taxi Service
+                </div>
+
+                <div class="caution-chip">
+                    <svg viewBox="0 0 24 24" stroke-width="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    Warning
+                </div>
+            </div>
+
+            <!-- Hero Section -->
+            <div class="cancel-hero">
+                <div class="alert-icon-wrap">
+                    <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg>
+                </div>
+                <h1 class="cancel-title">Cancel Ride #{{ ride.id }}?</h1>
+                <p class="cancel-subtitle">
+                    Are you sure you want to cancel this booking? Once cancelled, drivers will no longer be able to accept your ride.
+                </p>
+            </div>
+
+            <!-- Trip Summary Box -->
+            <div class="trip-preview-card">
+                <div class="route-preview">
+                    <div class="preview-point">
+                        <span class="preview-dot dot-green"></span>
+                        <span class="point-tag">Pickup</span>
+                        <span class="point-text">{{ ride.pickup_address|default:"Pickup location" }}</span>
+                    </div>
+                    <div class="preview-point">
+                        <span class="preview-dot dot-red"></span>
+                        <span class="point-tag">Destination</span>
+                        <span class="point-text">{{ ride.destination_address|default:"Destination location" }}</span>
+                    </div>
+                </div>
+
+                <div class="preview-metrics">
+                    <div>
+                        {{ ride.distance_km|default:"0" }} km &bull; {{ ride.duration_minutes|default:"0" }} min
+                    </div>
+                    <div class="preview-fare">
+                        {{ ride.fare|default:"0" }} UZS
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="actions-section">
+                <form method="POST">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-cancel-submit">
+                        <svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                        <span>Yes, Cancel Ride</span>
+                    </button>
+                </form>
+
+                <a href="{% url 'ride_detail' ride.id %}" class="btn-back-safe">
+                    <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    <span>No, Keep My Ride</span>
+                </a>
+            </div>
+
+            <!-- Footer -->
+            <div class="cancel-footer">
+                <div>Status: <span>{{ ride.get_status_display|default:ride.status|title }}</span></div>
+                <div>Action is permanent</div>
+            </div>
+        </div>
+    </main>
+</body>
+
 </html>

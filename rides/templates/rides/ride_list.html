@@ -3,41 +3,698 @@
 
 <head>
     <meta charset="UTF-8" />
-    <title>My Rides</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Rides | Taxi Service</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --taxi-yellow: #FFB800;
+            --taxi-yellow-glow: rgba(255, 184, 0, 0.28);
+            --taxi-yellow-hover: #ffc425;
+            --taxi-amber-dark: #cc9300;
+            --bg-asphalt: #090B0E;
+            --bg-surface: #12161F;
+            --bg-card: rgba(18, 22, 32, 0.85);
+            --border-subtle: rgba(255, 184, 0, 0.14);
+            --border-highlight: rgba(255, 184, 0, 0.38);
+            --text-primary: #F8FAFC;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+            --pickup-green: #22C55E;
+            --dest-red: #EF4444;
+            --cyan-accent: #06B6D4;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-asphalt);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 24px 16px 48px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Ambient Streetlight & Taxi Glow Atmosphere */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -100px;
+            right: -80px;
+            width: 550px;
+            height: 550px;
+            background: radial-gradient(circle, rgba(255, 184, 0, 0.14) 0%, rgba(255, 184, 0, 0.02) 45%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+            filter: blur(50px);
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: -120px;
+            left: -100px;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(14, 165, 233, 0.15) 0%, rgba(15, 23, 42, 0.04) 50%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+            filter: blur(60px);
+        }
+
+        .ambient-grid {
+            position: fixed;
+            inset: 0;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 48px 48px;
+            z-index: 0;
+            pointer-events: none;
+            mask-image: radial-gradient(ellipse at center, black 50%, transparent 85%);
+            -webkit-mask-image: radial-gradient(ellipse at center, black 50%, transparent 85%);
+        }
+
+        .rides-container {
+            position: relative;
+            z-index: 1;
+            max-width: 1080px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Top Nav Bar */
+        .top-nav {
+            background: var(--bg-card);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            flex-wrap: wrap;
+        }
+
+        .nav-brand-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 184, 0, 0.1);
+            border: 1px solid rgba(255, 184, 0, 0.28);
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--taxi-yellow);
+        }
+
+        .brand-badge svg {
+            width: 16px;
+            height: 16px;
+            fill: var(--taxi-yellow);
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-taxi-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, var(--taxi-yellow) 0%, #F59E0B 100%);
+            color: #090B0E;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 9px 18px;
+            border-radius: 12px;
+            text-decoration: none;
+            box-shadow: 0 4px 15px rgba(255, 184, 0, 0.35);
+            transition: all 0.2s ease;
+        }
+
+        .btn-taxi-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 184, 0, 0.5);
+            background: linear-gradient(135deg, var(--taxi-yellow-hover) 0%, #f5a71a 100%);
+        }
+
+        .btn-taxi-cta svg {
+            width: 15px;
+            height: 15px;
+            fill: #090B0E;
+        }
+
+        .btn-nav {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+            font-size: 13px;
+            font-weight: 600;
+            padding: 9px 16px;
+            border-radius: 12px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn-nav:hover {
+            background: rgba(255, 184, 0, 0.1);
+            border-color: rgba(255, 184, 0, 0.3);
+            color: var(--taxi-yellow);
+            transform: translateY(-1px);
+        }
+
+        /* Page Banner */
+        .page-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 4px;
+        }
+
+        .page-title {
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+        }
+
+        .page-subtitle {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .rides-count-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .rides-count-badge span {
+            color: var(--taxi-yellow);
+            font-family: 'Space Grotesk', monospace;
+            font-weight: 700;
+        }
+
+        /* Rides Feed Grid */
+        .rides-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(480px, 1fr));
+            gap: 20px;
+        }
+
+        .ride-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--border-subtle);
+            border-radius: 22px;
+            overflow: hidden;
+            box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.25s ease;
+            position: relative;
+        }
+
+        .ride-card:hover {
+            border-color: var(--border-highlight);
+            transform: translateY(-3px);
+            box-shadow: 0 20px 45px -8px rgba(0, 0, 0, 0.75), 0 0 25px rgba(255, 184, 0, 0.15);
+        }
+
+        .taxi-checker-ribbon {
+            height: 6px;
+            width: 100%;
+            background: repeating-conic-gradient(var(--taxi-yellow) 0% 25%, #11141B 0% 50%) 50% / 16px 6px;
+            border-bottom: 1px solid rgba(255, 184, 0, 0.25);
+        }
+
+        .ride-card-header {
+            padding: 16px 20px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .ride-id {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .ride-id span {
+            color: var(--taxi-yellow);
+        }
+
+        .ride-date {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Status Badge Variants */
+        .status-pill {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 4px 10px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-pending {
+            background: rgba(255, 184, 0, 0.12);
+            color: var(--taxi-yellow);
+            border: 1px solid rgba(255, 184, 0, 0.3);
+        }
+
+        .status-accepted {
+            background: rgba(251, 191, 36, 0.15);
+            color: #FBBF24;
+            border: 1px solid rgba(251, 191, 36, 0.35);
+        }
+
+        .status-arrived {
+            background: rgba(6, 182, 212, 0.15);
+            color: var(--cyan-accent);
+            border: 1px solid rgba(6, 182, 212, 0.35);
+        }
+
+        .status-in_progress {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34D399;
+            border: 1px solid rgba(16, 185, 129, 0.35);
+        }
+
+        .status-completed {
+            background: rgba(148, 163, 184, 0.12);
+            color: #CBD5E1;
+            border: 1px solid rgba(148, 163, 184, 0.25);
+        }
+
+        .status-cancelled {
+            background: rgba(239, 68, 68, 0.12);
+            color: #F87171;
+            border: 1px solid rgba(239, 68, 68, 0.28);
+        }
+
+        /* Route Pathway */
+        .ride-card-body {
+            padding: 18px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            flex: 1;
+        }
+
+        .route-path {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            position: relative;
+            padding-left: 20px;
+        }
+
+        .route-path::before {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 8px;
+            bottom: 12px;
+            width: 2px;
+            background: repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.2) 0, rgba(255, 255, 255, 0.2) 4px, transparent 4px, transparent 8px);
+        }
+
+        .route-point {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .route-dot {
+            position: absolute;
+            left: -20px;
+            top: 4px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .dot-pickup {
+            background: var(--pickup-green);
+            box-shadow: 0 0 8px rgba(34, 197, 94, 0.7);
+        }
+
+        .dot-dest {
+            background: var(--dest-red);
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.7);
+        }
+
+        .point-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            margin-bottom: 2px;
+        }
+
+        .point-address {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.35;
+        }
+
+        /* Metrics Strip */
+        .ride-metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 10px 12px;
+        }
+
+        .metric-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .metric-title {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+
+        .metric-value {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .metric-value.fare {
+            color: var(--taxi-yellow);
+            font-size: 14px;
+        }
+
+        /* Card Action Footer */
+        .ride-card-footer {
+            padding: 12px 20px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .btn-view-details {
+            width: 100%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-primary);
+            font-weight: 700;
+            font-size: 13px;
+            padding: 11px 16px;
+            border-radius: 12px;
+            text-decoration: none;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.2s ease;
+        }
+
+        .btn-view-details:hover {
+            background: rgba(255, 184, 0, 0.1);
+            border-color: rgba(255, 184, 0, 0.35);
+            color: var(--taxi-yellow);
+            transform: translateY(-1px);
+        }
+
+        .btn-view-details svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            fill: none;
+            transition: transform 0.2s ease;
+        }
+
+        .btn-view-details:hover svg {
+            transform: translateX(3px);
+        }
+
+        /* Empty State */
+        .empty-rides-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(24px);
+            border: 1px solid var(--border-subtle);
+            border-radius: 24px;
+            padding: 60px 24px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+        }
+
+        .empty-icon-wrap {
+            width: 68px;
+            height: 68px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, rgba(255, 184, 0, 0.15) 0%, rgba(255, 184, 0, 0.02) 100%);
+            border: 1px solid rgba(255, 184, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 4px;
+        }
+
+        .empty-icon-wrap svg {
+            width: 32px;
+            height: 32px;
+            fill: var(--taxi-yellow);
+        }
+
+        .empty-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .empty-desc {
+            font-size: 14px;
+            color: var(--text-muted);
+            max-width: 340px;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 560px) {
+            .rides-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .top-nav {
+                padding: 12px 16px;
+            }
+
+            .ride-card-header,
+            .ride-card-body,
+            .ride-card-footer {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+        }
+    </style>
 </head>
 
 <body>
-    <h1>My Rides</h1>
+    <div class="ambient-grid"></div>
 
-    {% if rides %}
-    {% for ride in rides %}
-    <hr />
+    <div class="rides-container">
+        <!-- Top Nav -->
+        <header class="top-nav">
+            <div class="nav-brand-group">
+                <div class="brand-badge">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.85 7h10.29l1.04 3H5.81l1.04-3zM19 17H5v-4.66l.12-.34h13.77l.11.34V17z"/>
+                        <circle cx="7.5" cy="14.5" r="1.5"/>
+                        <circle cx="16.5" cy="14.5" r="1.5"/>
+                    </svg>
+                    Taxi Service
+                </div>
+            </div>
 
-    <h3>Ride #{{ ride.id }}</h3>
+            <div class="nav-actions">
+                <a href="{% url 'create_ride' %}" class="btn-taxi-cta">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.85 7h10.29l1.04 3H5.81l1.04-3zM19 17H5v-4.66l.12-.34h13.77l.11.34V17z"/>
+                        <circle cx="7.5" cy="14.5" r="1.5"/>
+                        <circle cx="16.5" cy="14.5" r="1.5"/>
+                    </svg>
+                    <span>Request New Ride</span>
+                </a>
 
-    <p>Pickup: {{ ride.pickup_address }}</p>
-    <p>Destination: {{ ride.destination_address }}</p>
+                <a href="{% url 'profile' %}" class="btn-nav">
+                    <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span>Profile</span>
+                </a>
+            </div>
+        </header>
 
-    <p>Distance: {{ ride.distance_km }} km</p>
-    <p>Duration: {{ ride.duration_minutes }} minutes</p>
-    <p>Fare: {{ ride.fare }} UZS</p>
+        <!-- Page Banner -->
+        <div class="page-banner">
+            <div>
+                <h1 class="page-title">My Rides</h1>
+                <p class="page-subtitle">Track your past and active taxi rides across the fleet</p>
+            </div>
+            {% if rides %}
+            <div class="rides-count-badge">
+                Total Bookings: <span>{{ rides|length }}</span>
+            </div>
+            {% endif %}
+        </div>
 
-    <p>Status: {{ ride.get_status_display }}</p>
-    <p>Created: {{ ride.created_at }}</p>
+        <!-- Rides Grid -->
+        {% if rides %}
+        <div class="rides-grid">
+            {% for ride in rides %}
+            <article class="ride-card">
+                <div class="taxi-checker-ribbon"></div>
 
-    <a href="{% url 'ride_detail' ride.id %}">
-        View Details
-    </a>
-    {% endfor %}
-    {% else %}
-    <p>You haven't created any rides yet.</p>
-    {% endif %}
+                <div class="ride-card-header">
+                    <div class="ride-id">
+                        <span>Ride</span> #{{ ride.id }}
+                    </div>
 
-    <hr />
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="status-pill status-{{ ride.status }}">
+                            {{ ride.get_status_display }}
+                        </span>
+                    </div>
+                </div>
 
-    <a href="{% url 'create_ride' %}">Create Another Ride</a>
-    <br />
-    <a href="{% url 'profile' %}">Back to Profile</a>
+                <div class="ride-card-body">
+                    <div class="route-path">
+                        <div class="route-point">
+                            <span class="route-dot dot-pickup"></span>
+                            <span class="point-label">Pickup</span>
+                            <span class="point-address">{{ ride.pickup_address }}</span>
+                        </div>
+                        <div class="route-point">
+                            <span class="route-dot dot-dest"></span>
+                            <span class="point-label">Destination</span>
+                            <span class="point-address">{{ ride.destination_address }}</span>
+                        </div>
+                    </div>
+
+                    <div class="ride-metrics">
+                        <div class="metric-item">
+                            <span class="metric-title">Distance</span>
+                            <span class="metric-value">{{ ride.distance_km }} km</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-title">Duration</span>
+                            <span class="metric-value">{{ ride.duration_minutes }} min</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-title">Fare</span>
+                            <span class="metric-value fare">{{ ride.fare }} UZS</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ride-card-footer">
+                    <a href="{% url 'ride_detail' ride.id %}" class="btn-view-details">
+                        <span>View Trip Details</span>
+                        <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                    </a>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+
+        {% else %}
+        <!-- Empty State -->
+        <div class="empty-rides-card">
+            <div class="empty-icon-wrap">
+                <svg viewBox="0 0 24 24">
+                    <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.85 7h10.29l1.04 3H5.81l1.04-3zM19 17H5v-4.66l.12-.34h13.77l.11.34V17z"/>
+                    <circle cx="7.5" cy="14.5" r="1.5"/>
+                    <circle cx="16.5" cy="14.5" r="1.5"/>
+                </svg>
+            </div>
+            <h2 class="empty-title">No Rides Yet</h2>
+            <p class="empty-desc">You haven't requested any rides yet. Book your first taxi now with instant fare calculation.</p>
+            <a href="{% url 'create_ride' %}" class="btn-taxi-cta" style="padding: 12px 24px; font-size: 14px;">
+                <svg viewBox="0 0 24 24">
+                    <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.85 7h10.29l1.04 3H5.81l1.04-3zM19 17H5v-4.66l.12-.34h13.77l.11.34V17z"/>
+                    <circle cx="7.5" cy="14.5" r="1.5"/>
+                    <circle cx="16.5" cy="14.5" r="1.5"/>
+                </svg>
+                <span>Book Your First Ride</span>
+            </a>
+        </div>
+        {% endif %}
+    </div>
 </body>
 
 </html>

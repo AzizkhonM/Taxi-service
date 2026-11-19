@@ -1,166 +1,1042 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+
+<head>
     <meta charset="UTF-8" />
-    <title>Driver Dashboard</title>
-  </head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Driver Command Dashboard | Taxi Service</title>
 
-  <body>
-    <a href="{% url 'car_form' %}">My Car</a><br />
-    <a href="{% url 'logout' %}">Logout</a>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 
-    <div
-      id="dashboard"
-      data-data-url="{% url 'dashboard_data' %}"
-      data-accept-url="{% url 'accept_ride' 0 %}"
-      data-status-url="{% url 'update_ride_status' 0 %}"
-    >
-      <h1>Available Rides</h1>
-      <div id="available-rides"></div>
+    <style>
+        :root {
+            --taxi-yellow: #FFB800;
+            --taxi-yellow-glow: rgba(255, 184, 0, 0.28);
+            --taxi-yellow-hover: #ffc425;
+            --taxi-amber-dark: #cc9300;
+            --bg-asphalt: #090B0E;
+            --bg-surface: #12161F;
+            --bg-card: rgba(18, 22, 32, 0.85);
+            --border-subtle: rgba(255, 184, 0, 0.14);
+            --border-highlight: rgba(255, 184, 0, 0.38);
+            --text-primary: #F8FAFC;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+            --success-color: #10B981;
+            --success-glow: rgba(16, 185, 129, 0.25);
+            --cyan-accent: #06B6D4;
+            --purple-accent: #8B5CF6;
+        }
 
-      <hr />
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-      <h1>My Rides</h1>
-      <div id="my-rides"></div>
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-asphalt);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 24px 16px 48px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Ambient Streetlight & Taxi Glow Atmosphere */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -100px;
+            right: -80px;
+            width: 550px;
+            height: 550px;
+            background: radial-gradient(circle, rgba(255, 184, 0, 0.14) 0%, rgba(255, 184, 0, 0.02) 45%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+            filter: blur(50px);
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: -120px;
+            left: -100px;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(14, 165, 233, 0.15) 0%, rgba(15, 23, 42, 0.04) 50%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+            filter: blur(60px);
+        }
+
+        .ambient-grid {
+            position: fixed;
+            inset: 0;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 48px 48px;
+            z-index: 0;
+            pointer-events: none;
+            mask-image: radial-gradient(ellipse at center, black 50%, transparent 85%);
+            -webkit-mask-image: radial-gradient(ellipse at center, black 50%, transparent 85%);
+        }
+
+        .dashboard-container {
+            position: relative;
+            z-index: 1;
+            max-width: 1240px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Top Navigation Bar */
+        .top-nav {
+            background: var(--bg-card);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            flex-wrap: wrap;
+        }
+
+        .nav-brand-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 184, 0, 0.1);
+            border: 1px solid rgba(255, 184, 0, 0.28);
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--taxi-yellow);
+        }
+
+        .brand-badge svg {
+            width: 16px;
+            height: 16px;
+            fill: var(--taxi-yellow);
+        }
+
+        .radar-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #34D399;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.28);
+            padding: 5px 12px;
+            border-radius: 999px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .radar-pulse-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background-color: #34D399;
+            box-shadow: 0 0 10px #34D399;
+            animation: radar-ping 1.8s infinite cubic-bezier(0, 0, 0.2, 1);
+        }
+
+        @keyframes radar-ping {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.35; transform: scale(0.85); }
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-nav {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+            font-size: 13px;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 12px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn-nav:hover {
+            background: rgba(255, 184, 0, 0.1);
+            border-color: rgba(255, 184, 0, 0.3);
+            color: var(--taxi-yellow);
+            transform: translateY(-1px);
+        }
+
+        .btn-nav svg {
+            width: 15px;
+            height: 15px;
+            stroke: currentColor;
+            fill: none;
+        }
+
+        .btn-nav-logout:hover {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #EF4444;
+        }
+
+        /* Two Column Command Hub */
+        .command-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+        }
+
+        .hub-column {
+            background: var(--bg-card);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--border-subtle);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            transition: border-color 0.3s ease;
+        }
+
+        .hub-column:hover {
+            border-color: var(--border-highlight);
+        }
+
+        /* Taxi Checkerboard Ribbon */
+        .taxi-checker-ribbon {
+            height: 8px;
+            width: 100%;
+            background: repeating-conic-gradient(var(--taxi-yellow) 0% 25%, #11141B 0% 50%) 50% / 18px 8px;
+            border-bottom: 1px solid rgba(255, 184, 0, 0.25);
+        }
+
+        .column-header {
+            padding: 20px 24px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .column-icon-wrap {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: rgba(255, 184, 0, 0.1);
+            border: 1px solid rgba(255, 184, 0, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .column-icon-wrap svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--taxi-yellow);
+        }
+
+        .icon-active-hub {
+            background: rgba(6, 182, 212, 0.1);
+            border-color: rgba(6, 182, 212, 0.3);
+        }
+
+        .icon-active-hub svg {
+            fill: var(--cyan-accent);
+        }
+
+        .column-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+        }
+
+        .column-subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .count-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 28px;
+            height: 28px;
+            padding: 0 9px;
+            border-radius: 999px;
+            font-family: 'Space Grotesk', monospace;
+            font-weight: 700;
+            font-size: 13px;
+            background: rgba(255, 184, 0, 0.15);
+            color: var(--taxi-yellow);
+            border: 1px solid rgba(255, 184, 0, 0.3);
+        }
+
+        .count-pill.cyan {
+            background: rgba(6, 182, 212, 0.15);
+            color: var(--cyan-accent);
+            border-color: rgba(6, 182, 212, 0.3);
+        }
+
+        /* Rides Feed */
+        .rides-feed {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            min-height: 380px;
+            max-height: 720px;
+            overflow-y: auto;
+        }
+
+        /* Custom Scrollbar */
+        .rides-feed::-webkit-scrollbar {
+            width: 6px;
+        }
+        .rides-feed::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .rides-feed::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+        }
+        .rides-feed::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 184, 0, 0.3);
+        }
+
+        /* Individual Ride Card */
+        .ride-card {
+            background: rgba(255, 255, 255, 0.025);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 18px;
+            padding: 18px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            transition: all 0.25s ease;
+            position: relative;
+        }
+
+        .ride-card:hover {
+            background: rgba(255, 255, 255, 0.045);
+            border-color: rgba(255, 184, 0, 0.28);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .ride-card.active-order {
+            border-color: rgba(6, 182, 212, 0.25);
+            background: linear-gradient(145deg, rgba(6, 182, 212, 0.03) 0%, rgba(255, 255, 255, 0.02) 100%);
+        }
+
+        .ride-card-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .ride-id-tag {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .ride-id-tag span {
+            color: var(--taxi-yellow);
+        }
+
+        /* Status Badge Variants */
+        .status-badge {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 4px 10px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-pending {
+            background: rgba(255, 184, 0, 0.12);
+            color: var(--taxi-yellow);
+            border: 1px solid rgba(255, 184, 0, 0.3);
+        }
+
+        .status-accepted {
+            background: rgba(251, 191, 36, 0.15);
+            color: #FBBF24;
+            border: 1px solid rgba(251, 191, 36, 0.35);
+        }
+
+        .status-arrived {
+            background: rgba(6, 182, 212, 0.15);
+            color: var(--cyan-accent);
+            border: 1px solid rgba(6, 182, 212, 0.35);
+        }
+
+        .status-in_progress {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34D399;
+            border: 1px solid rgba(16, 185, 129, 0.35);
+        }
+
+        .status-completed {
+            background: rgba(148, 163, 184, 0.12);
+            color: #CBD5E1;
+            border: 1px solid rgba(148, 163, 184, 0.25);
+        }
+
+        /* Route Pathway Visualizer */
+        .route-path {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            position: relative;
+            padding-left: 20px;
+        }
+
+        .route-path::before {
+            content: '';
+            position: absolute;
+            left: 6px;
+            top: 10px;
+            bottom: 12px;
+            width: 2px;
+            background: repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.2) 0, rgba(255, 255, 255, 0.2) 4px, transparent 4px, transparent 8px);
+        }
+
+        .route-point {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .route-dot {
+            position: absolute;
+            left: -20px;
+            top: 4px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 2px solid var(--bg-surface);
+        }
+
+        .dot-pickup {
+            background: #22C55E;
+            box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+        }
+
+        .dot-dest {
+            background: #EF4444;
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+        }
+
+        .point-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            margin-bottom: 2px;
+        }
+
+        .point-address {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.35;
+        }
+
+        /* Metrics Bar */
+        .ride-metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 10px 12px;
+        }
+
+        .metric-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .metric-title {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+
+        .metric-value {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .metric-value.fare {
+            color: var(--taxi-yellow);
+            font-size: 14px;
+        }
+
+        /* Action Buttons */
+        .ride-action-wrap {
+            margin-top: 2px;
+        }
+
+        .action-form {
+            width: 100%;
+        }
+
+        .btn-dispatch {
+            width: 100%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-weight: 800;
+            font-size: 14px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-dispatch:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-dispatch:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Accept Ride Button */
+        .btn-accept-ride {
+            background: linear-gradient(135deg, var(--taxi-yellow) 0%, #F59E0B 100%);
+            color: #090B0E;
+            box-shadow: 0 8px 20px -4px rgba(255, 184, 0, 0.45);
+        }
+
+        .btn-accept-ride:hover {
+            box-shadow: 0 12px 25px -3px rgba(255, 184, 0, 0.6);
+            background: linear-gradient(135deg, var(--taxi-yellow-hover) 0%, #f5a71a 100%);
+        }
+
+        /* Driver Arrived Button */
+        .btn-arrived {
+            background: linear-gradient(135deg, #06B6D4 0%, #0284C7 100%);
+            color: #FFFFFF;
+            box-shadow: 0 8px 20px -4px rgba(6, 182, 212, 0.4);
+        }
+
+        /* Start Ride Button */
+        .btn-start-ride {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: #FFFFFF;
+            box-shadow: 0 8px 20px -4px rgba(16, 185, 129, 0.4);
+        }
+
+        /* Complete Ride Button */
+        .btn-complete-ride {
+            background: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%);
+            color: #FFFFFF;
+            box-shadow: 0 8px 20px -4px rgba(139, 92, 246, 0.4);
+        }
+
+        /* Completed Tag */
+        .completed-flag {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #10B981;
+            padding: 10px;
+            border-radius: 10px;
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        /* Empty Feed States */
+        .empty-feed {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 50px 24px;
+            gap: 12px;
+            color: var(--text-secondary);
+            margin: auto 0;
+        }
+
+        .empty-icon-wrap {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 4px;
+        }
+
+        .empty-icon-wrap svg {
+            width: 24px;
+            height: 24px;
+            stroke: var(--text-muted);
+            fill: none;
+        }
+
+        .empty-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .empty-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+            max-width: 280px;
+            line-height: 1.4;
+        }
+
+        @media (max-width: 860px) {
+            .command-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .top-nav {
+                padding: 12px 16px;
+            }
+            .column-header,
+            .rides-feed {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="ambient-grid"></div>
+
+    <div class="dashboard-container">
+        <!-- Top Driver Nav -->
+        <header class="top-nav">
+            <div class="nav-brand-group">
+                <div class="brand-badge">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.85 7h10.29l1.04 3H5.81l1.04-3zM19 17H5v-4.66l.12-.34h13.77l.11.34V17z"/>
+                        <circle cx="7.5" cy="14.5" r="1.5"/>
+                        <circle cx="16.5" cy="14.5" r="1.5"/>
+                    </svg>
+                    Taxi Dispatch Hub
+                </div>
+
+                <div class="radar-badge">
+                    <span class="radar-pulse-dot"></span>
+                    Live Radar
+                </div>
+            </div>
+
+            <div class="nav-actions">
+                <a href="{% url 'car_form' %}" class="btn-nav">
+                    <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="7" width="20" height="13" rx="2" ry="2"></rect>
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                    </svg>
+                    <span>My Car</span>
+                </a>
+
+                <a href="{% url 'logout' %}" class="btn-nav btn-nav-logout">
+                    <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </header>
+
+        <!-- Command Hub Grid -->
+        <div
+            id="dashboard"
+            data-data-url="{% url 'dashboard_data' %}"
+            data-accept-url="{% url 'accept_ride' 0 %}"
+            data-status-url="{% url 'update_ride_status' 0 %}"
+            class="command-grid"
+        >
+            <!-- Available Rides Column -->
+            <section class="hub-column">
+                <div class="taxi-checker-ribbon"></div>
+
+                <div class="column-header">
+                    <div class="header-title-wrap">
+                        <div class="column-icon-wrap">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="column-title">Available Broadcasts</h2>
+                            <p class="column-subtitle">Incoming rides in your radar</p>
+                        </div>
+                    </div>
+                    <span id="available-count" class="count-pill">0</span>
+                </div>
+
+                <div id="available-rides" class="rides-feed"></div>
+            </section>
+
+            <!-- My Rides Column -->
+            <section class="hub-column">
+                <div class="taxi-checker-ribbon"></div>
+
+                <div class="column-header">
+                    <div class="header-title-wrap">
+                        <div class="column-icon-wrap icon-active-hub">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.85 7h10.29l1.04 3H5.81l1.04-3zM19 17H5v-4.66l.12-.34h13.77l.11.34V17z"/>
+                                <circle cx="7.5" cy="14.5" r="1.5"/>
+                                <circle cx="16.5" cy="14.5" r="1.5"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="column-title">My Assignments</h2>
+                            <p class="column-subtitle">Your claimed and in-progress trips</p>
+                        </div>
+                    </div>
+                    <span id="my-rides-count" class="count-pill cyan">0</span>
+                </div>
+
+                <div id="my-rides" class="rides-feed"></div>
+            </section>
+        </div>
     </div>
 
     <form id="csrf-form" hidden>{% csrf_token %}</form>
 
     <script>
-      const dashboard = document.getElementById("dashboard");
-      const availableRides = document.getElementById("available-rides");
-      const myRides = document.getElementById("my-rides");
+        const dashboard = document.getElementById("dashboard");
+        const availableRides = document.getElementById("available-rides");
+        const myRides = document.getElementById("my-rides");
+        const availableCount = document.getElementById("available-count");
+        const myRidesCount = document.getElementById("my-rides-count");
 
-      const csrfToken = document.querySelector(
-        "#csrf-form [name=csrfmiddlewaretoken]"
-      ).value;
+        let lastDataHash = "";
 
-      function escapeHTML(value) {
-        return String(value).replace(
-          /[&<>"']/g,
-          (char) =>
-            ({
-              "&": "&amp;",
-              "<": "&lt;",
-              ">": "&gt;",
-              '"': "&quot;",
-              "'": "&#039;",
-            }[char])
-        );
-      }
+        const csrfToken = document.querySelector(
+            "#csrf-form [name=csrfmiddlewaretoken]"
+        ).value;
 
-      function renderForm(url, label) {
-        return `
+        function escapeHTML(value) {
+            return String(value).replace(
+                /[&<>"']/g,
+                (char) =>
+                    ({
+                        "&": "&amp;",
+                        "<": "&lt;",
+                        ">": "&gt;",
+                        '"': "&quot;",
+                        "'": "&#039;",
+                    }[char])
+            );
+        }
+
+        function formatCurrency(fare) {
+            return Number(fare).toLocaleString() + " UZS";
+        }
+
+        function renderForm(url, label, btnClass = "btn-accept-ride") {
+            return `
                 <form class="action-form" method="POST" action="${url}">
-                    <button type="submit">${label}</button>
+                    <button type="submit" class="btn-dispatch ${btnClass}">
+                        <span>${label}</span>
+                    </button>
                 </form>
             `;
-      }
+        }
 
-      function renderAvailableRide(ride) {
-        const acceptUrl = dashboard.dataset.acceptUrl.replace(
-          /0\/$/,
-          `${ride.id}/`
-        );
+        function renderAvailableRide(ride) {
+            const acceptUrl = dashboard.dataset.acceptUrl.replace(
+                /0\/$/,
+                `${ride.id}/`
+            );
 
-        return `
-                <hr>
-                <h3>Ride #${ride.id}</h3>
-                <p>Pickup: ${escapeHTML(ride.pickup)}</p>
-                <p>Destination: ${escapeHTML(ride.destination)}</p>
-                <p>Distance: ${escapeHTML(ride.distance)} km</p>
-                <p>Duration: ${escapeHTML(ride.duration)} minutes</p>
-                <p>Fare: ${escapeHTML(ride.fare)} UZS</p>
-                ${renderForm(acceptUrl, "Accept Ride")}
+            return `
+                <div class="ride-card">
+                    <div class="ride-card-top">
+                        <div class="ride-id-tag">
+                            <span>Order</span> #${ride.id}
+                        </div>
+                        <span class="status-badge status-pending">● Waiting</span>
+                    </div>
+
+                    <div class="route-path">
+                        <div class="route-point">
+                            <span class="route-dot dot-pickup"></span>
+                            <span class="point-label">Pickup Location</span>
+                            <span class="point-address">${escapeHTML(ride.pickup)}</span>
+                        </div>
+                        <div class="route-point">
+                            <span class="route-dot dot-dest"></span>
+                            <span class="point-label">Destination</span>
+                            <span class="point-address">${escapeHTML(ride.destination)}</span>
+                        </div>
+                    </div>
+
+                    <div class="ride-metrics">
+                        <div class="metric-item">
+                            <span class="metric-title">Distance</span>
+                            <span class="metric-value">${escapeHTML(ride.distance)} km</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-title">Duration</span>
+                            <span class="metric-value">${escapeHTML(ride.duration)} min</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-title">Fare</span>
+                            <span class="metric-value fare">${formatCurrency(ride.fare)}</span>
+                        </div>
+                    </div>
+
+                    <div class="ride-action-wrap">
+                        ${renderForm(acceptUrl, "Accept Ride", "btn-accept-ride")}
+                    </div>
+                </div>
             `;
-      }
-
-      function renderMyRide(ride) {
-        const statusUrl = dashboard.dataset.statusUrl.replace(
-          /0\/$/,
-          `${ride.id}/`
-        );
-
-        let action = "";
-
-        if (ride.status === "accepted") {
-          action = renderForm(statusUrl, "I've Arrived");
-        } else if (ride.status === "arrived") {
-          action = renderForm(statusUrl, "Start Ride");
-        } else if (ride.status === "in_progress") {
-          action = renderForm(statusUrl, "Complete Ride");
         }
 
-        return `
-                <hr>
-                <h3>Ride #${ride.id}</h3>
-                <p>Pickup: ${escapeHTML(ride.pickup)}</p>
-                <p>Destination: ${escapeHTML(ride.destination)}</p>
-                <p>Distance: ${escapeHTML(ride.distance)} km</p>
-                <p>Duration: ${escapeHTML(ride.duration)} minutes</p>
-                <p>Fare: ${escapeHTML(ride.fare)} UZS</p>
-                <p>Status: ${escapeHTML(ride.status_display)}</p>
-                ${action}
+        function renderMyRide(ride) {
+            const statusUrl = dashboard.dataset.statusUrl.replace(
+                /0\/$/,
+                `${ride.id}/`
+            );
+
+            let actionHtml = "";
+            let statusBadgeClass = `status-${ride.status}`;
+
+            if (ride.status === "accepted") {
+                actionHtml = renderForm(statusUrl, "I've Arrived", "btn-arrived");
+            } else if (ride.status === "arrived") {
+                actionHtml = renderForm(statusUrl, "Start Ride", "btn-start-ride");
+            } else if (ride.status === "in_progress") {
+                actionHtml = renderForm(statusUrl, "Complete Ride", "btn-complete-ride");
+            } else if (ride.status === "completed") {
+                actionHtml = `<div class="completed-flag">✓ Trip Finished</div>`;
+            }
+
+            return `
+                <div class="ride-card active-order">
+                    <div class="ride-card-top">
+                        <div class="ride-id-tag">
+                            <span>Ride</span> #${ride.id}
+                        </div>
+                        <span class="status-badge ${statusBadgeClass}">
+                            ${escapeHTML(ride.status_display)}
+                        </span>
+                    </div>
+
+                    <div class="route-path">
+                        <div class="route-point">
+                            <span class="route-dot dot-pickup"></span>
+                            <span class="point-label">Pickup Location</span>
+                            <span class="point-address">${escapeHTML(ride.pickup)}</span>
+                        </div>
+                        <div class="route-point">
+                            <span class="route-dot dot-dest"></span>
+                            <span class="point-label">Destination</span>
+                            <span class="point-address">${escapeHTML(ride.destination)}</span>
+                        </div>
+                    </div>
+
+                    <div class="ride-metrics">
+                        <div class="metric-item">
+                            <span class="metric-title">Distance</span>
+                            <span class="metric-value">${escapeHTML(ride.distance)} km</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-title">Duration</span>
+                            <span class="metric-value">${escapeHTML(ride.duration)} min</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-title">Fare</span>
+                            <span class="metric-value fare">${formatCurrency(ride.fare)}</span>
+                        </div>
+                    </div>
+
+                    <div class="ride-action-wrap">
+                        ${actionHtml}
+                    </div>
+                </div>
             `;
-      }
-
-      async function loadRides() {
-        try {
-          const response = await fetch(dashboard.dataset.dataUrl);
-
-          if (!response.ok) {
-            throw new Error("Could not load rides.");
-          }
-
-          const data = await response.json();
-
-          availableRides.innerHTML = data.rides.length
-            ? data.rides.map(renderAvailableRide).join("")
-            : "<p>No available rides.</p>";
-
-          myRides.innerHTML = data.my_rides.length
-            ? data.my_rides.map(renderMyRide).join("")
-            : "<p>You haven't accepted any rides yet.</p>";
-        } catch (error) {
-          console.error(error);
         }
-      }
 
-      dashboard.addEventListener("submit", async function (event) {
-        const form = event.target.closest(".action-form");
+        async function loadRides() {
+            try {
+                const response = await fetch(dashboard.dataset.dataUrl);
 
-        if (!form) return;
+                if (!response.ok) {
+                    throw new Error("Could not load rides.");
+                }
 
-        event.preventDefault();
+                const data = await response.json();
+                const dataHash = JSON.stringify(data);
 
-        const button = form.querySelector("button");
-        button.disabled = true;
+                // Skip DOM repaints if data has not changed to keep UI completely flicker-free
+                if (dataHash === lastDataHash) {
+                    return;
+                }
+                lastDataHash = dataHash;
 
-        try {
-          const response = await fetch(form.action, {
-            method: "POST",
-            headers: {
-              "X-CSRFToken": csrfToken,
-              "X-Requested-With": "XMLHttpRequest",
-            },
-          });
+                // Update counter pills
+                availableCount.textContent = data.rides.length;
+                myRidesCount.textContent = data.my_rides.length;
 
-          const data = await response.json();
+                // Render available rides feed
+                if (data.rides.length) {
+                    availableRides.innerHTML = data.rides.map(renderAvailableRide).join("");
+                } else {
+                    availableRides.innerHTML = `
+                        <div class="empty-feed">
+                            <div class="empty-icon-wrap">
+                                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="6" x2="12" y2="12"></line>
+                                    <line x1="12" y1="12" x2="16" y2="16"></line>
+                                </svg>
+                            </div>
+                            <div class="empty-title">No pending ride requests</div>
+                            <div class="empty-desc">Radar is scanning for passenger bookings in your area...</div>
+                        </div>
+                    `;
+                }
 
-          if (!response.ok) {
-            throw new Error(data.error || "Request failed.");
-          }
-
-          await loadRides();
-        } catch (error) {
-          alert(error.message);
-          await loadRides();
+                // Render driver's claimed rides feed
+                if (data.my_rides.length) {
+                    myRides.innerHTML = data.my_rides.map(renderMyRide).join("");
+                } else {
+                    myRides.innerHTML = `
+                        <div class="empty-feed">
+                            <div class="empty-icon-wrap">
+                                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="1" y="3" width="15" height="13"></rect>
+                                    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                                    <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                                    <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                                </svg>
+                            </div>
+                            <div class="empty-title">No active assignments</div>
+                            <div class="empty-desc">Accept a broadcasted ride on the left to start driving.</div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error("Failed to load rides:", error);
+            }
         }
-      });
 
-      loadRides();
+        dashboard.addEventListener("submit", async function (event) {
+            const form = event.target.closest(".action-form");
 
-      setInterval(loadRides, 1500);
+            if (!form) return;
+
+            event.preventDefault();
+
+            const button = form.querySelector("button");
+            if (button) button.disabled = true;
+
+            try {
+                const response = await fetch(form.action, {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": csrfToken,
+                        "X-Requested-With": "XMLHttpRequest",
+                    },
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || "Request failed.");
+                }
+
+                // Invalidate hash to force instant update
+                lastDataHash = "";
+                await loadRides();
+            } catch (error) {
+                alert(error.message);
+                lastDataHash = "";
+                await loadRides();
+            }
+        });
+
+        loadRides();
+        setInterval(loadRides, 1500);
     </script>
-  </body>
+</body>
+
 </html>

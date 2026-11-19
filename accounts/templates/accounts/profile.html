@@ -3,31 +3,688 @@
 
 <head>
     <meta charset="UTF-8" />
-    <title>Profile</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ request.user.get_full_name|default:request.user.username }} | Taxi Passenger Profile</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --taxi-yellow: #FFB800;
+            --taxi-yellow-glow: rgba(255, 184, 0, 0.28);
+            --taxi-yellow-hover: #ffc425;
+            --taxi-amber-dark: #cc9300;
+            --bg-asphalt: #090B0E;
+            --bg-surface: #12161F;
+            --bg-card: rgba(18, 22, 32, 0.82);
+            --bg-card-hover: rgba(24, 30, 44, 0.92);
+            --border-subtle: rgba(255, 184, 0, 0.14);
+            --border-highlight: rgba(255, 184, 0, 0.38);
+            --text-primary: #F8FAFC;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+            --success-color: #10B981;
+            --danger-color: #EF4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-asphalt);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 16px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Ambient Streetlight & Taxi Glow Atmosphere */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -120px;
+            right: -100px;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(255, 184, 0, 0.16) 0%, rgba(255, 184, 0, 0.03) 45%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+            filter: blur(40px);
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: -150px;
+            left: -120px;
+            width: 550px;
+            height: 550px;
+            background: radial-gradient(circle, rgba(30, 58, 138, 0.22) 0%, rgba(15, 23, 42, 0.05) 50%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+            filter: blur(50px);
+        }
+
+        /* Subtle Road Grid lines background */
+        .ambient-grid {
+            position: fixed;
+            inset: 0;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 48px 48px;
+            z-index: 0;
+            pointer-events: none;
+            mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+            -webkit-mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+        }
+
+        .profile-container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 540px;
+        }
+
+        /* Themed Taxi Card */
+        .profile-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--border-subtle);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 
+                0 25px 60px -15px rgba(0, 0, 0, 0.8),
+                0 0 35px var(--taxi-yellow-glow);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .profile-card:hover {
+            border-color: var(--border-highlight);
+            box-shadow: 
+                0 30px 70px -12px rgba(0, 0, 0, 0.85),
+                0 0 45px rgba(255, 184, 0, 0.28);
+        }
+
+        /* Signature Taxi Checkerboard Ribbon */
+        .taxi-checker-ribbon {
+            height: 10px;
+            width: 100%;
+            background: repeating-conic-gradient(var(--taxi-yellow) 0% 25%, #11141B 0% 50%) 50% / 20px 10px;
+            border-bottom: 1px solid rgba(255, 184, 0, 0.3);
+        }
+
+        /* Card Header & Brand Bar */
+        .card-header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 24px 28px 12px;
+        }
+
+        .brand-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 184, 0, 0.08);
+            border: 1px solid rgba(255, 184, 0, 0.22);
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--taxi-yellow);
+        }
+
+        .brand-badge svg {
+            width: 14px;
+            height: 14px;
+            fill: var(--taxi-yellow);
+        }
+
+        .status-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #34D399;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            padding: 5px 11px;
+            border-radius: 999px;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background-color: #34D399;
+            box-shadow: 0 0 10px #34D399;
+            animation: pulse-dot 2s infinite ease-in-out;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.85); }
+        }
+
+        /* Profile Hero Section */
+        .profile-hero {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 12px 28px 26px;
+        }
+
+        .avatar-container {
+            position: relative;
+            margin-bottom: 18px;
+        }
+
+        .avatar-ring {
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--taxi-yellow) 0%, rgba(255, 184, 0, 0.1) 60%, var(--taxi-yellow) 100%);
+            animation: rotate-ring 9s linear infinite;
+        }
+
+        @keyframes rotate-ring {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .avatar {
+            position: relative;
+            width: 86px;
+            height: 86px;
+            background: linear-gradient(145deg, #1A1F2C, #0F131C);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 30px;
+            font-weight: 700;
+            color: var(--taxi-yellow);
+            border: 3px solid var(--bg-surface);
+            box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.1), 0 8px 20px rgba(0, 0, 0, 0.6);
+            letter-spacing: -1px;
+        }
+
+        .avatar-taxi-pin {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 28px;
+            height: 28px;
+            background: var(--taxi-yellow);
+            border-radius: 50%;
+            border: 3px solid var(--bg-surface);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        }
+
+        .avatar-taxi-pin svg {
+            width: 14px;
+            height: 14px;
+            fill: #090B0E;
+        }
+
+        .user-name {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .user-handle {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-family: 'Space Grotesk', monospace;
+            background: rgba(255, 255, 255, 0.04);
+            padding: 3px 10px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+        }
+
+        .role-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            background: rgba(255, 184, 0, 0.12);
+            color: var(--taxi-yellow);
+            border: 1px solid rgba(255, 184, 0, 0.28);
+        }
+
+        /* Info Grid Cards */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            padding: 0 28px 24px;
+        }
+
+        .info-card {
+            background: rgba(255, 255, 255, 0.025);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 14px 16px;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .info-card:hover {
+            background: rgba(255, 255, 255, 0.045);
+            border-color: rgba(255, 184, 0, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .info-card-full {
+            grid-column: span 2;
+        }
+
+        .info-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .info-label svg {
+            width: 14px;
+            height: 14px;
+            stroke: var(--taxi-yellow);
+        }
+
+        .info-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            word-break: break-all;
+        }
+
+        .info-value.phone {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 15px;
+            color: var(--taxi-yellow);
+            letter-spacing: 0.02em;
+        }
+
+        /* Action Buttons Area */
+        .actions-section {
+            padding: 6px 28px 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        /* Prime Ride Button */
+        .btn-taxi-primary {
+            flex: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: linear-gradient(135deg, var(--taxi-yellow) 0%, #F59E0B 100%);
+            color: #090B0E;
+            font-weight: 800;
+            font-size: 15px;
+            padding: 14px 20px;
+            border-radius: 14px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 10px 25px -5px rgba(255, 184, 0, 0.45);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-taxi-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .btn-taxi-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 30px -4px rgba(255, 184, 0, 0.6);
+            background: linear-gradient(135deg, var(--taxi-yellow-hover) 0%, #f5a71a 100%);
+        }
+
+        .btn-taxi-primary:hover::before {
+            left: 100%;
+        }
+
+        .btn-taxi-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-taxi-primary svg {
+            width: 18px;
+            height: 18px;
+            fill: #090B0E;
+        }
+
+        /* Secondary Rides Button */
+        .btn-taxi-secondary {
+            flex: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-primary);
+            font-weight: 700;
+            font-size: 14px;
+            padding: 14px 20px;
+            border-radius: 14px;
+            text-decoration: none;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .btn-taxi-secondary:hover {
+            background: rgba(255, 184, 0, 0.08);
+            border-color: rgba(255, 184, 0, 0.35);
+            color: var(--taxi-yellow);
+            transform: translateY(-2px);
+        }
+
+        .btn-taxi-secondary svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            fill: none;
+        }
+
+        /* Logout Link/Button */
+        .btn-logout {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 600;
+            padding: 12px;
+            border-radius: 12px;
+            text-decoration: none;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+            margin-top: 4px;
+        }
+
+        .btn-logout:hover {
+            color: var(--danger-color);
+            background: rgba(239, 68, 68, 0.08);
+            border-color: rgba(239, 68, 68, 0.2);
+        }
+
+        .btn-logout svg {
+            width: 15px;
+            height: 15px;
+            stroke: currentColor;
+            fill: none;
+        }
+
+        /* Card Footer / Meter Badge */
+        .meter-footer {
+            padding: 14px 28px;
+            background: rgba(9, 11, 14, 0.6);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .meter-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'Space Grotesk', monospace;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .meter-status span {
+            color: var(--taxi-yellow);
+            font-weight: 700;
+        }
+
+        @media (max-width: 480px) {
+            .btn-group {
+                flex-direction: column;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .info-card-full {
+                grid-column: span 1;
+            }
+
+            .card-header-bar,
+            .profile-hero,
+            .info-grid,
+            .actions-section,
+            .meter-footer {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+        }
+    </style>
 </head>
 
 <body>
-    <h1>My Profile</h1>
+    <div class="ambient-grid"></div>
 
-    <p>Username: {{ request.user.username }}</p>
-    <p>First name: {{ request.user.first_name }}</p>
-    <p>Last name: {{ request.user.last_name }}</p>
-    <p>Phone: {{ request.user.phone_number }}</p>
-    <p>Role: {{ request.user.get_role_display }}</p>
+    <main class="profile-container">
+        <div class="profile-card">
+            <!-- Iconic Taxi Checkerboard Ribbon Top -->
+            <div class="taxi-checker-ribbon"></div>
 
-    {% if request.user.role == "customer" %}
-    <a href="{% url 'create_ride' %}">
-        <button type="button">Create Ride</button>
-    </a>
-    {% endif %}
-    {% if request.user.role == "customer" %}
-    <a href="{% url 'ride_list' %}">
-        <button type="button">My Rides</button>
-    </a>
-    {% endif %}
-    <br><br>
+            <!-- Header Bar -->
+            <div class="card-header-bar">
+                <div class="brand-badge">
+                    <svg viewBox="0 0 24 24">
+                        <!-- Modern Taxi Cab Icon -->
+                        <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.85 7h10.29l1.04 3H5.81l1.04-3zM19 17H5v-4.66l.12-.34h13.77l.11.34V17z"/>
+                        <circle cx="7.5" cy="14.5" r="1.5"/>
+                        <circle cx="16.5" cy="14.5" r="1.5"/>
+                    </svg>
+                    Taxi Service
+                </div>
 
-    <a href="{% url 'logout' %}">Logout</a>
+                <div class="status-chip">
+                    <span class="status-dot"></span>
+                    Online
+                </div>
+            </div>
+
+            <!-- Profile Hero -->
+            <div class="profile-hero">
+                <div class="avatar-container">
+                    <div class="avatar-ring"></div>
+                    <div class="avatar">
+                        {% if request.user.first_name %}
+                            {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}
+                        {% else %}
+                            {{ request.user.username|first|upper }}
+                        {% endif %}
+                    </div>
+                    <div class="avatar-taxi-pin" title="Verified Taxi Account">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm-1 14.5l-3.5-3.5 1.41-1.41L11 13.67l5.59-5.59 1.41 1.41L11 16.5z"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <h1 class="user-name">
+                    {% if request.user.get_full_name %}
+                        {{ request.user.get_full_name }}
+                    {% else %}
+                        {{ request.user.username }}
+                    {% endif %}
+                </h1>
+
+                <div class="user-handle">
+                    @{{ request.user.username }}
+                </div>
+
+                <div class="role-pill">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    {{ request.user.get_role_display|default:request.user.role|title }}
+                </div>
+            </div>
+
+            <!-- Info Grid -->
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="info-label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        First Name
+                    </div>
+                    <div class="info-value">
+                        {{ request.user.first_name|default:"Not specified" }}
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <div class="info-label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        Last Name
+                    </div>
+                    <div class="info-value">
+                        {{ request.user.last_name|default:"Not specified" }}
+                    </div>
+                </div>
+
+                <div class="info-card info-card-full">
+                    <div class="info-label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                        </svg>
+                        Phone Number
+                    </div>
+                    <div class="info-value phone">
+                        {{ request.user.phone_number|default:"—" }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions Section -->
+            <div class="actions-section">
+                {% if request.user.role == "customer" %}
+                <div class="btn-group">
+                    <a href="{% url 'create_ride' %}" class="btn-taxi-primary">
+                        <svg viewBox="0 0 24 24">
+                            <!-- Taxi cab front icon -->
+                            <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.85 7h10.29l1.04 3H5.81l1.04-3zM19 17H5v-4.66l.12-.34h13.77l.11.34V17z"/>
+                            <circle cx="7.5" cy="14.5" r="1.5"/>
+                            <circle cx="16.5" cy="14.5" r="1.5"/>
+                        </svg>
+                        <span>Create Ride</span>
+                    </a>
+
+                    <a href="{% url 'ride_list' %}" class="btn-taxi-secondary">
+                        <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+                            <line x1="8" y1="2" x2="8" y2="18"></line>
+                            <line x1="16" y1="6" x2="16" y2="22"></line>
+                        </svg>
+                        <span>My Rides</span>
+                    </a>
+                </div>
+                {% endif %}
+
+                <a href="{% url 'logout' %}" class="btn-logout">
+                    <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    <span>Log Out</span>
+                </a>
+            </div>
+
+            <!-- Meter Footer -->
+            <div class="meter-footer">
+                <div class="meter-status">
+                    Service: <span>Active</span>
+                </div>
+                <div>
+                    Ready for pickup
+                </div>
+            </div>
+        </div>
+    </main>
 </body>
 
 </html>
