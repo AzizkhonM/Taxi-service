@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Ride Cannot Be Edited</title>
+  </head>
+  <body>
+    <h1>Ride Cannot Be Edited</h1>
+
+    <p>This ride can only be edited while its status is Pending.</p>
+
+    <p>Current status: {{ ride.get_status_display }}</p>
+
+    <a href="{% url 'ride_detail' ride.id %}"> Back to Ride Details </a>
+  </body>
+</html>

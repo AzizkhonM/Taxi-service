@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Ride #{{ ride.id }}</title>
+  </head>
+  <body>
+    <h1>Ride #{{ ride.id }}</h1>
+
+    <h2>Customer Information</h2>
+    <p>{{ ride.customer }}</p>
+
+    <h2>Driver Information</h2>
+    <div id="driver-information">
+      {% if ride.driver %}
+      <p>Name: {{ ride.driver }}</p>
+
+      {% if ride.driver.car %}
+      <h3>Car Information</h3>
+      <p>Car: {{ ride.driver.car.brand }} {{ ride.driver.car.model }}</p>
+      <p>Color: {{ ride.driver.car.color }}</p>
+      <p>Plate Number: {{ ride.driver.car.plate_number }}</p>
+      <p>Year: {{ ride.driver.car.year }}</p>
+      {% else %}
+      <p>Car information is not available.</p>
+      {% endif %} {% else %}
+      <p>Driver not assigned yet.</p>
+      {% endif %}
+    </div>
+
+    <h2>Pickup</h2>
+    <p>Address: {{ ride.pickup_address }}</p>
+    <p>Latitude: {{ ride.pickup_latitude }}</p>
+    <p>Longitude: {{ ride.pickup_longitude }}</p>
+
+    <h2>Destination</h2>
+    <p>Address: {{ ride.destination_address }}</p>
+    <p>Latitude: {{ ride.destination_latitude }}</p>
+    <p>Longitude: {{ ride.destination_longitude }}</p>
+
+    <h2>Trip Information</h2>
+    <p>Distance: {{ ride.distance_km }} km</p>
+    <p>Duration: {{ ride.duration_minutes }} minutes</p>
+    <p>Fare: {{ ride.fare }} UZS</p>
+
+    <h2>Status</h2>
+    <p id="ride-status">{{ ride.get_status_display }}</p>
+
+    <h2>Time Information</h2>
+    <p>Created: {{ ride.created_at }}</p>
+    <p>Updated: <span id="updated-at">{{ ride.updated_at }}</span></p>
+
+    <div id="ride-actions">
+      {% if ride.status == "pending" %}
+      <a href="{% url 'cancel_ride' ride.id %}">Cancel Ride</a>
+      {% endif %}
+    </div>
+
+    <br /><br />
+
+    <a href="{% url 'ride_list' %}">Back to My Rides</a>
+
+    <script>
+      const dataUrl = "{% url 'ride_detail_data' ride.id %}";
+
+      const statusElement = document.getElementById("ride-status");
+      const driverElement = document.getElementById("driver-information");
+      const updatedElement = document.getElementById("updated-at");
+      const actionsElement = document.getElementById("ride-actions");
+
+      function escapeHTML(value) {
+        return String(value).replace(/[&<>"']/g, function (char) {
+          return {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#039;",
+          }[char];
+        });
+      }
+
+      async function updateRide() {
+        try {
+          const response = await fetch(dataUrl);
+
+          if (!response.ok) {
+            throw new Error("Ride ma'lumotlarini olishda xatolik.");
+          }
+
+          const data = await response.json();
+
+          statusElement.textContent = data.status_display;
+          updatedElement.textContent = data.updated_at;
+
+          if (data.driver) {
+            let html = `<p>Name: ${escapeHTML(data.driver.name)}</p>`;
+
+            if (data.driver.car) {
+              const car = data.driver.car;
+
+              html += `
+                <h3>Car Information</h3>
+                <p>Car: ${escapeHTML(car.brand)} ${escapeHTML(car.model)}</p>
+                <p>Color: ${escapeHTML(car.color)}</p>
+                <p>Plate Number: ${escapeHTML(car.plate_number)}</p>
+                <p>Year: ${escapeHTML(car.year)}</p>
+              `;
+            } else {
+              html += "<p>Car information is not available.</p>";
+            }
+
+            driverElement.innerHTML = html;
+          } else {
+            driverElement.innerHTML = "<p>Driver not assigned yet.</p>";
+          }
+
+          if (data.status !== "pending") {
+            actionsElement.innerHTML = "";
+          }
+        } catch (error) {
+          console.error("Ride update error:", error);
+        }
+      }
+
+      updateRide();
+      setInterval(updateRide, 2000);
+    </script>
+  </body>
+</html>

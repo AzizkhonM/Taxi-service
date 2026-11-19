@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Cancel Ride</title>
+  </head>
+
+  <body>
+    <h1>Cancel Ride #{{ ride.id }}</h1>
+
+    <p>Are you sure you want to cancel this ride?</p>
+
+    <form method="POST">
+      {% csrf_token %}
+      <button type="submit">Yes, Cancel Ride</button>
+    </form>
+
+    <a href="{% url 'ride_detail' ride.id %}">No, Go Back</a>
+  </body>
+</html>

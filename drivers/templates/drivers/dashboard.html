@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Driver Dashboard</title>
+  </head>
+
+  <body>
+    <a href="{% url 'car_form' %}">My Car</a><br />
+    <a href="{% url 'logout' %}">Logout</a>
+
+    <div
+      id="dashboard"
+      data-data-url="{% url 'dashboard_data' %}"
+      data-accept-url="{% url 'accept_ride' 0 %}"
+      data-status-url="{% url 'update_ride_status' 0 %}"
+    >
+      <h1>Available Rides</h1>
+      <div id="available-rides"></div>
+
+      <hr />
+
+      <h1>My Rides</h1>
+      <div id="my-rides"></div>
+    </div>
+
+    <form id="csrf-form" hidden>{% csrf_token %}</form>
+
+    <script>
+      const dashboard = document.getElementById("dashboard");
+      const availableRides = document.getElementById("available-rides");
+      const myRides = document.getElementById("my-rides");
+
+      const csrfToken = document.querySelector(
+        "#csrf-form [name=csrfmiddlewaretoken]"
+      ).value;
+
+      function escapeHTML(value) {
+        return String(value).replace(
+          /[&<>"']/g,
+          (char) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#039;",
+            }[char])
+        );
+      }
+
+      function renderForm(url, label) {
+        return `
+                <form class="action-form" method="POST" action="${url}">
+                    <button type="submit">${label}</button>
+                </form>
+            `;
+      }
+
+      function renderAvailableRide(ride) {
+        const acceptUrl = dashboard.dataset.acceptUrl.replace(
+          /0\/$/,
+          `${ride.id}/`
+        );
+
+        return `
+                <hr>
+                <h3>Ride #${ride.id}</h3>
+                <p>Pickup: ${escapeHTML(ride.pickup)}</p>
+                <p>Destination: ${escapeHTML(ride.destination)}</p>
+                <p>Distance: ${escapeHTML(ride.distance)} km</p>
+                <p>Duration: ${escapeHTML(ride.duration)} minutes</p>
+                <p>Fare: ${escapeHTML(ride.fare)} UZS</p>
+                ${renderForm(acceptUrl, "Accept Ride")}
+            `;
+      }
+
+      function renderMyRide(ride) {
+        const statusUrl = dashboard.dataset.statusUrl.replace(
+          /0\/$/,
+          `${ride.id}/`
+        );
+
+        let action = "";
+
+        if (ride.status === "accepted") {
+          action = renderForm(statusUrl, "I've Arrived");
+        } else if (ride.status === "arrived") {
+          action = renderForm(statusUrl, "Start Ride");
+        } else if (ride.status === "in_progress") {
+          action = renderForm(statusUrl, "Complete Ride");
+        }
+
+        return `
+                <hr>
+                <h3>Ride #${ride.id}</h3>
+                <p>Pickup: ${escapeHTML(ride.pickup)}</p>
+                <p>Destination: ${escapeHTML(ride.destination)}</p>
+                <p>Distance: ${escapeHTML(ride.distance)} km</p>
+                <p>Duration: ${escapeHTML(ride.duration)} minutes</p>
+                <p>Fare: ${escapeHTML(ride.fare)} UZS</p>
+                <p>Status: ${escapeHTML(ride.status_display)}</p>
+                ${action}
+            `;
+      }
+
+      async function loadRides() {
+        try {
+          const response = await fetch(dashboard.dataset.dataUrl);
+
+          if (!response.ok) {
+            throw new Error("Could not load rides.");
+          }
+
+          const data = await response.json();
+
+          availableRides.innerHTML = data.rides.length
+            ? data.rides.map(renderAvailableRide).join("")
+            : "<p>No available rides.</p>";
+
+          myRides.innerHTML = data.my_rides.length
+            ? data.my_rides.map(renderMyRide).join("")
+            : "<p>You haven't accepted any rides yet.</p>";
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+      dashboard.addEventListener("submit", async function (event) {
+        const form = event.target.closest(".action-form");
+
+        if (!form) return;
+
+        event.preventDefault();
+
+        const button = form.querySelector("button");
+        button.disabled = true;
+
+        try {
+          const response = await fetch(form.action, {
+            method: "POST",
+            headers: {
+              "X-CSRFToken": csrfToken,
+              "X-Requested-With": "XMLHttpRequest",
+            },
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.error || "Request failed.");
+          }
+
+          await loadRides();
+        } catch (error) {
+          alert(error.message);
+          await loadRides();
+        }
+      });
+
+      loadRides();
+
+      setInterval(loadRides, 1500);
+    </script>
+  </body>
+</html>

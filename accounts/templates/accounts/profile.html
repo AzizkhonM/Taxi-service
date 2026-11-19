@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Profile</title>
+</head>
+
+<body>
+    <h1>My Profile</h1>
+
+    <p>Username: {{ request.user.username }}</p>
+    <p>First name: {{ request.user.first_name }}</p>
+    <p>Last name: {{ request.user.last_name }}</p>
+    <p>Phone: {{ request.user.phone_number }}</p>
+    <p>Role: {{ request.user.get_role_display }}</p>
+
+    {% if request.user.role == "customer" %}
+    <a href="{% url 'create_ride' %}">
+        <button type="button">Create Ride</button>
+    </a>
+    {% endif %}
+    {% if request.user.role == "customer" %}
+    <a href="{% url 'ride_list' %}">
+        <button type="button">My Rides</button>
+    </a>
+    {% endif %}
+    <br><br>
+
+    <a href="{% url 'logout' %}">Logout</a>
+</body>
+
+</html>

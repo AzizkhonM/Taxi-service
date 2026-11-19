@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>My Rides</title>
+</head>
+
+<body>
+    <h1>My Rides</h1>
+
+    {% if rides %}
+    {% for ride in rides %}
+    <hr />
+
+    <h3>Ride #{{ ride.id }}</h3>
+
+    <p>Pickup: {{ ride.pickup_address }}</p>
+    <p>Destination: {{ ride.destination_address }}</p>
+
+    <p>Distance: {{ ride.distance_km }} km</p>
+    <p>Duration: {{ ride.duration_minutes }} minutes</p>
+    <p>Fare: {{ ride.fare }} UZS</p>
+
+    <p>Status: {{ ride.get_status_display }}</p>
+    <p>Created: {{ ride.created_at }}</p>
+
+    <a href="{% url 'ride_detail' ride.id %}">
+        View Details
+    </a>
+    {% endfor %}
+    {% else %}
+    <p>You haven't created any rides yet.</p>
+    {% endif %}
+
+    <hr />
+
+    <a href="{% url 'create_ride' %}">Create Another Ride</a>
+    <br />
+    <a href="{% url 'profile' %}">Back to Profile</a>
+</body>
+
+</html>

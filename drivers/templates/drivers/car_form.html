@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>My Car</title>
+  </head>
+
+  <body>
+    <h1>{% if car %}Update My Car{% else %}Add My Car{% endif %}</h1>
+
+    <form method="POST">
+      {% csrf_token %} {{ form.as_p }}
+
+      <button type="submit">Save Car</button>
+    </form>
+
+    <a href="{% url 'driver_dashboard' %}">Back to Dashboard</a>
+  </body>
+</html>
